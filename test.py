@@ -15,14 +15,14 @@ valid_loader = DataLoader(valid_data, batch_size=64, shuffle=True)
 # 학습 세팅
 basemodel = model.BaseModel(32, cat_features, num_features, 2)
 optimizer = torch.optim.Adam(basemodel.parameters(), lr=0.001)
-criterion = nn.CrossEntropyLoss()
+criterion = nn.BCEWithLogitsLoss()
 
 # 학습
 for epoch in range(100):
     for batch in train_loader:
         x_cat, x_num, y = batch
         y_pred = basemodel(x_cat, x_num)
-        loss = criterion(y_pred, y)
+        loss = criterion(y_pred[0], y) + criterion(y_pred[1], y)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -34,7 +34,7 @@ for epoch in range(100):
             for valid_batch in valid_loader:
                 x_cat_valid, x_num_valid, y_valid = valid_batch
                 y_pred_valid = basemodel(x_cat_valid, x_num_valid)
-                valid_loss += criterion(y_pred_valid, y_valid).item()
+                valid_loss += criterion(y_pred_valid[0], y_valid) + criterion(y_pred_valid[1], y_valid)
         valid_loss /= len(valid_loader)
         print(f'Epoch {epoch}, Train loss: {loss.item()}, Validation Loss: {valid_loss}')
         basemodel.train()
