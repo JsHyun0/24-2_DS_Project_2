@@ -19,9 +19,9 @@ data_path = './Data/[24-2 DS_Project2] Data.csv'
 # Custom Dataset 클래스 정의
 class FraudDataset(torch.utils.data.Dataset):
     def __init__(self, cat_features, num_features, labels):
-        self.cat_features = torch.tensor(cat_features.values, dtype=torch.long)
-        self.num_features = torch.tensor(num_features.values, dtype=torch.float)
-        self.labels = torch.tensor(labels.values, dtype=torch.float)
+        self.cat_features = torch.tensor(cat_features.values, dtype=torch.long).to(device)
+        self.num_features = torch.tensor(num_features.values, dtype=torch.float).to(device)
+        self.labels = torch.tensor(labels.values, dtype=torch.float).to(device)
         
     def __len__(self):
         return len(self.labels)
@@ -40,7 +40,10 @@ valid_loader = DataLoader(valid_dataset, batch_size=64, shuffle=False)  # 검증
 
 # 학습 세팅
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-basemodel = model.BaseModel(32, cat_features, num_features, 1).to(device)
+print(f'사용 중인 디바이스: {device}')  # 현재 사용 중인 디바이스 출력
+
+basemodel = model.BaseModel(32, cat_features, num_features, 1)
+basemodel = basemodel.to(device)
 optimizer = torch.optim.Adam(basemodel.parameters(), lr=0.001)
 criterion = nn.BCEWithLogitsLoss()
 
