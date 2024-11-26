@@ -162,4 +162,5 @@ cython_debug/
 #.idea/
 
 # 데이터
+Data/*
 data/*
