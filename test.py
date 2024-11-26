@@ -16,6 +16,10 @@ num_features = ['Current Age', 'Retirement Age', 'Per Capita Income - Zipcode', 
 data_path = './Data/[24-2 DS_Project2] Data.csv'
 (train_cat_X, train_num_X, train_y), (valid_cat_X, valid_num_X, valid_y) = util.process_data(data_path, cat_features, num_features)
 
+# device 설정을 클래스 정의 전에 이동
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f'사용 중인 디바이스: {device}')
+
 # Custom Dataset 클래스 정의
 class FraudDataset(torch.utils.data.Dataset):
     def __init__(self, cat_features, num_features, labels):
@@ -39,9 +43,6 @@ train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
 valid_loader = DataLoader(valid_dataset, batch_size=64, shuffle=False)  # 검증은 shuffle 불필요
 
 # 학습 세팅
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(f'사용 중인 디바이스: {device}')  # 현재 사용 중인 디바이스 출력
-
 basemodel = model.BaseModel(32, cat_features, num_features, 1)
 basemodel = basemodel.to(device)
 optimizer = torch.optim.Adam(basemodel.parameters(), lr=0.001)
