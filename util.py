@@ -5,8 +5,9 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from collections import defaultdict
 
 # 데이터 전처리 함수
-def process_data(data_path, cat_features, num_features, test_size=0.3, random_state=42):
+def process_data(data_path, cat_features, num_features):
     df = pd.read_csv(data_path)
+    
     ######### 수치형 속성 처리 ##########
     # 이상치 제거 (IQR 방법)
     num_df = df[num_features]
@@ -25,44 +26,49 @@ def process_data(data_path, cat_features, num_features, test_size=0.3, random_st
     # 마스크를 사용하여 한 번에 필터링
     df = df[mask]
     
-    # 수치형 데이터 정규화
+    ######### 시간 기반 train-test 분할 ##########
+    train_mask = df['Month'].between(1, 9)
+    train_df = df[train_mask]
+    valid_df = df[~train_mask]
+    
+    ######### 수치형 속성 처리 ##########
+    # train 데이터로만 fit
     scaler = StandardScaler()
-    num_df = pd.DataFrame(scaler.fit_transform(df[num_features]), columns=num_features)
+    scaler.fit(train_df[num_features])
     
-
+    # train과 valid 각각 transform
+    train_num_X = pd.DataFrame(
+        scaler.transform(train_df[num_features]), 
+        columns=num_features, 
+        index=train_df.index
+    )
+    valid_num_X = pd.DataFrame(
+        scaler.transform(valid_df[num_features]), 
+        columns=num_features, 
+        index=valid_df.index
+    )
+    
     ######### 범주형 속성 처리 ##########
+    train_cat_df = train_df[cat_features].copy()
+    valid_cat_df = valid_df[cat_features].copy()
     
-    cat_df = df[cat_features].copy()
-    # 'Error Message' 컬럼의 NaN 값을 'None'으로 대체
-    cat_df['Error Message'] = cat_df['Error Message'].fillna('None')
+    train_cat_df['Error Message'] = train_cat_df['Error Message'].fillna('None')
+    valid_cat_df['Error Message'] = valid_cat_df['Error Message'].fillna('None')
+    
     label_encoders = {}
-    # 범주형 데이터 레이블 인코딩하여 nn.Embedding의 입력으로 사용 가능
+    # train 데이터로 fit하고 train/valid에 각각 transform
     for feature in cat_features:
         le = LabelEncoder()
-        cat_df[feature] = le.fit_transform(cat_df[feature].astype(str))
+        le.fit(train_cat_df[feature].astype(str))
+        train_cat_df[feature] = le.transform(train_cat_df[feature].astype(str))
+        valid_cat_df[feature] = le.transform(valid_cat_df[feature].astype(str))
         label_encoders[feature] = le
-
-    y = (df['Is Fraud?'] == 'Yes').astype(int)
     
-    # train-validation 분리
-    train_cat_X, valid_cat_X, train_y, valid_y = train_test_split(
-        cat_df,
-        y,
-        test_size=test_size,
-        random_state=random_state,
-        stratify=y
-    )
+    # 타겟 변수 처리
+    train_y = (train_df['Is Fraud?'] == 'Yes').astype(int)
+    valid_y = (valid_df['Is Fraud?'] == 'Yes').astype(int)
     
-    # train-validation 분리 (수치형)
-    train_num_X, valid_num_X, _, _ = train_test_split(
-        num_df,
-        y,
-        test_size=test_size,
-        random_state=random_state,
-        stratify=y
-    )
-    
-    return (train_cat_X, train_num_X, train_y), (valid_cat_X, valid_num_X, valid_y)
+    return (train_cat_df, train_num_X, train_y), (valid_cat_df, valid_num_X, valid_y)
 
 def evaluate_validation(model, data):
     model.eval()
