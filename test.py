@@ -43,7 +43,7 @@ train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
 valid_loader = DataLoader(valid_dataset, batch_size=64, shuffle=False)  # 검증은 shuffle 불필요
 
 # 학습 세팅
-basemodel = model.BaseModel(32, cat_features, num_features, 1)
+basemodel = model.GPUBaseModel(32, cat_features, num_features, 1, device)
 basemodel = basemodel.to(device)
 optimizer = torch.optim.Adam(basemodel.parameters(), lr=0.001)
 criterion = nn.BCEWithLogitsLoss()

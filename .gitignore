@@ -164,3 +164,8 @@ cython_debug/
 # 데이터
 Data/*
 data/*
+
+Jiseung/
+Jiseung/*
+
+saved_models/*
