@@ -83,6 +83,8 @@ class PreProc :
         print("complete preprocessing...")
         return (cat_df, num_df)
 
+    # time-based split으로 바꾸고, 정상 샘플만 반환하도록
+    # valid_set은 평가를 위해서 y label 함께 리턴
     def TVsplit(self, cat_df, num_df, y, test_size=0.3, random_state=42) :
 
         train_cat_x, valid_cat_x, train_y, valid_y = train_test_split(
