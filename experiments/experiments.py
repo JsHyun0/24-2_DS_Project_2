@@ -2,10 +2,11 @@ import neptune
 import optuna
 import torch
 import torch.nn as nn
-import model
-import util
-import args
+import Models.model as model
+import utils.util as util
+import utils.args as args
 import os
+from torch.utils.data import DataLoader
 
 
 
@@ -36,5 +37,5 @@ def objective(trial):
     return loss.item()
 
 if __name__ == "__main__":
-    optuna.create_study(direction='maximize')
+    study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=100)

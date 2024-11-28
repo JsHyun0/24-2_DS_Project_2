@@ -7,10 +7,15 @@ Fraud Detection 모델 학습 및 예측
 ## 프로젝트 구조
 ```
 .
-├── Data
+├── Data/
 │   ├── train.csv
 │   ├── test.csv
 │   └── sample_submission.csv
+├── Models/
+│   └── model.py
+├── utils/
+│   ├── util.py
+│   └── args.py
 ├── experiments.py
 ├── main.py
 ├── model.py

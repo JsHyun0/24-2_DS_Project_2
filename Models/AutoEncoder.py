@@ -7,8 +7,8 @@ import sys
 from torch.utils.data import Dataset, DataLoader
 
 sys.path.append('../')
-from model import BaseModel
-from util import process_data
+from Models.model import BaseModel
+from utils.util import process_data
 
 class AutoEncoder(BaseModel):
     def __init__(self, encoding_dim, cat_features, num_features, num_classes):
@@ -41,7 +41,18 @@ class AutoEncoder(BaseModel):
         x = self.fc_cat(original_x)
         encoded = self.encoder(x)
         return encoded
-
+    
+class AutoEncoderDataset(Dataset):
+    def __init__(self, cat_features, num_features):
+        self.cat_features = torch.tensor(cat_features.values, dtype=torch.long).to(device)
+        self.num_features = torch.tensor(num_features.values, dtype=torch.float).to(device)
+        
+    def __len__(self):
+        return len(self.labels)
+    
+    def __getitem__(self, idx):
+        return self.cat_features[idx], self.num_features[idx]
+    
 if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     cat_features = ['Gender', 'Card Brand', 'Card Type', 'Expires', 'Has Chip', 'Year PIN last Changed', 'Whether Security Chip is Used', 'Error Message', 'Month', 'Day']
@@ -50,16 +61,7 @@ if __name__ == '__main__':
     (train_cat_X, train_num_X, _), (valid_cat_X, valid_num_X, _) = process_data(data, cat_features, num_features)
 
     # Custom Dataset 클래스 정의
-    class AutoEncoderDataset(Dataset):
-        def __init__(self, cat_features, num_features):
-            self.cat_features = torch.tensor(cat_features.values, dtype=torch.long).to(device)
-            self.num_features = torch.tensor(num_features.values, dtype=torch.float).to(device)
-            
-        def __len__(self):
-            return len(self.labels)
-        
-        def __getitem__(self, idx):
-            return self.cat_features[idx], self.num_features[idx]
+
 
     # 학습용, 검증용 데이터셋 생성
     train_dataset = AutoEncoderDataset(train_cat_X, train_num_X)
