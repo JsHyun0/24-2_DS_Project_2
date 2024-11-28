@@ -1,7 +1,7 @@
-import model
+import Models.model as model
 import torch
-import util
-import args
+import utils.util as util
+import utils.args as args
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -89,7 +89,7 @@ for epoch in range(100):
         # 모델 저장
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
-            torch.save(basemodel.state_dict(), 'best_model.pth')
+            torch.save(basemodel.state_dict(), './saved_models/best_model.pth')
 
         basemodel.train()
 

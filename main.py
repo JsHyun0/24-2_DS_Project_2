@@ -1,10 +1,10 @@
-import model
+import Models.model as model
 import argparse
 import torch
-import util
+import utils.util as util
 import torch.nn as nn
 import torch.nn.functional as F
-import args
+import utils.args as args
 
 args = args.parse_args()
 train_data, valid_data, cat_features, num_features = util.process_data(args.data_path)
