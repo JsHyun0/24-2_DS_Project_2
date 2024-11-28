@@ -8,10 +8,10 @@ from torch.utils.data import Dataset, DataLoader
 
 sys.path.append('../')
 from Models.model import BaseModel
-from utils.util import process_data
+from utils.preprocess import process_data
 
 class AutoEncoder(BaseModel):
-    def __init__(self, encoding_dim, cat_features, num_features, num_classes):
+    def __init__(self, encoding_dim, cat_features, num_features, num_classes=1):
         super(AutoEncoder, self).__init__(encoding_dim, cat_features, num_features, num_classes)
         self.input_dim = len(cat_features) * 5 + len(num_features)
         self.decoder = nn.Sequential(
@@ -20,19 +20,16 @@ class AutoEncoder(BaseModel):
             nn.Linear(64, 64),
             nn.ReLU(),
             nn.Linear(64, self.input_dim),
-        )
-        self.reconstruction_layer = nn.Sequential(
-            nn.Linear(64, self.input_dim),
             nn.ReLU()
         )
+
     def forward(self, x_cat, x_num):
         embeddings = [emb(x_cat[:, i]) for i, emb in enumerate(self.cat_embeddings)]
         original_x = torch.cat(embeddings + [x_num], dim=1)
         x = self.fc_cat(original_x)
         encoded = self.encoder(x)
         decoded = self.decoder(encoded)
-        reconstructed = self.reconstruction_layer(decoded)
-        return reconstructed, original_x
+        return decoded, original_x
     
     # 임베딩 추출, torch.eval() 모드에서 사용
     def get_embedding(self, x_cat, x_num):
@@ -43,12 +40,12 @@ class AutoEncoder(BaseModel):
         return encoded
     
 class AutoEncoderDataset(Dataset):
-    def __init__(self, cat_features, num_features):
+    def __init__(self, cat_features, num_features, device):
         self.cat_features = torch.tensor(cat_features.values, dtype=torch.long).to(device)
         self.num_features = torch.tensor(num_features.values, dtype=torch.float).to(device)
         
     def __len__(self):
-        return len(self.labels)
+        return len(self.cat_features)
     
     def __getitem__(self, idx):
         return self.cat_features[idx], self.num_features[idx]
@@ -64,8 +61,8 @@ if __name__ == '__main__':
 
 
     # 학습용, 검증용 데이터셋 생성
-    train_dataset = AutoEncoderDataset(train_cat_X, train_num_X)
-    valid_dataset = AutoEncoderDataset(valid_cat_X, valid_num_X)
+    train_dataset = AutoEncoderDataset(train_cat_X, train_num_X, device)
+    valid_dataset = AutoEncoderDataset(valid_cat_X, valid_num_X, device)
 
 
     # 데이터 로더 (배치 생성)

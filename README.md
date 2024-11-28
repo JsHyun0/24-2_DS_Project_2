@@ -19,8 +19,6 @@ Fraud Detection 모델 학습 및 예측
 ├── experiments.py
 ├── main.py
 ├── model.py
-├── util.py
-├── args.py
 ```
 
 ## 실험 방법
