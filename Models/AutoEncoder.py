@@ -2,13 +2,12 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import pandas as pd
-import numpy as np
 import sys
 from torch.utils.data import Dataset, DataLoader
 
 sys.path.append('../')
 from Models.model import BaseModel
-from utils.preprocess import process_data
+from legacy.preprocess import process_data
 
 class AutoEncoder(BaseModel):
     def __init__(self, encoding_dim, cat_features, num_features, num_classes=1):
