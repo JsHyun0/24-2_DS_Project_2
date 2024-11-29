@@ -40,6 +40,7 @@ class AutoEncoder(BaseModel):
  
 
     
+## Train Dataset
 class AEtrainDataset(Dataset):
     def __init__(self, cat_features, num_features, device):
         self.cat_features = torch.tensor(cat_features.values, dtype=torch.long).to(device)
@@ -49,7 +50,8 @@ class AEtrainDataset(Dataset):
     
     def __getitem__(self, idx):
         return self.cat_features[idx], self.num_features[idx]
-    
+
+## Valid Dataset
 class AEvalidDataset(Dataset):
     def __init__(self, cat_features, num_features, y, device):
         self.cat_features = torch.tensor(cat_features.values, dtype=torch.long).to(device)
