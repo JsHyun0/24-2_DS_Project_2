@@ -1,11 +1,10 @@
 import Models.model as model
 import torch
-import utils.util as util
-import utils.args as args
+import legacy.util as util
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-import numpy as np
+
 ## 여기서 본인이 만든 모델 및 데이터 전처리를 메챠쿠차 테스트하시길 바랍니다.
 
 # Feature Selection
@@ -13,7 +12,7 @@ cat_features = ['Gender', 'Card Brand', 'Card Type', 'Expires', 'Has Chip', 'Yea
 num_features = ['Current Age', 'Retirement Age', 'Per Capita Income - Zipcode', 'Yearly Income', 'Total Debt', 'Credit Score', 'Credit Limit', 'Amount']
 
 # 데이터 전처리
-data_path = './Data/[24-2 DS_Project2] Data.csv'
+data_path = '../Data/[24-2 DS_Project2] Data.csv'
 (train_cat_X, train_num_X, train_y), (valid_cat_X, valid_num_X, valid_y) = util.process_data(data_path, cat_features, num_features)
 
 # device 설정을 클래스 정의 전에 이동

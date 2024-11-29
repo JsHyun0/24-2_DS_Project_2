@@ -1,7 +1,6 @@
 import Models.model as model
-import argparse
 import torch
-import utils.util as util
+import legacy.util as util
 import torch.nn as nn
 import torch.nn.functional as F
 import utils.args as args
