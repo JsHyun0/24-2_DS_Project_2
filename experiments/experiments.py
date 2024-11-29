@@ -2,9 +2,7 @@ import neptune
 import optuna
 import torch
 import torch.nn as nn
-import Models.model as model
-import utils.util as util
-import utils.args as args
+import legacy.util as util
 import os
 from torch.utils.data import DataLoader
 
