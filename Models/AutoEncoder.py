@@ -38,31 +38,44 @@ class AutoEncoder(BaseModel):
         x = self.fc_cat(original_x)
         encoded = self.encoder(x)
         return encoded
+ 
+
     
-class AutoEncoderDataset(Dataset):
+class AEtrainDataset(Dataset):
     def __init__(self, cat_features, num_features, device):
         self.cat_features = torch.tensor(cat_features.values, dtype=torch.long).to(device)
         self.num_features = torch.tensor(num_features.values, dtype=torch.float).to(device)
-        
     def __len__(self):
         return len(self.cat_features)
     
     def __getitem__(self, idx):
         return self.cat_features[idx], self.num_features[idx]
     
+class AEvalidDataset(Dataset):
+    def __init__(self, cat_features, num_features, y, device):
+        self.cat_features = torch.tensor(cat_features.values, dtype=torch.long).to(device)
+        self.num_features = torch.tensor(num_features.values, dtype=torch.float).to(device)
+        self.y = y
+
+    def __len__(self):
+        return len(self.cat_features)
+    
+    def __getitem__(self, idx):
+        return self.cat_features[idx], self.num_features[idx] , self.y[idx]
+    
 if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     cat_features = ['Gender', 'Card Brand', 'Card Type', 'Expires', 'Has Chip', 'Year PIN last Changed', 'Whether Security Chip is Used', 'Error Message', 'Month', 'Day']
     num_features = ['Current Age', 'Retirement Age', 'Per Capita Income - Zipcode', 'Yearly Income', 'Total Debt', 'Credit Score', 'Credit Limit', 'Amount']
     data = pd.read_csv('../Data/[24-2 DS_Project2] Data.csv')
-    (train_cat_X, train_num_X, _), (valid_cat_X, valid_num_X, _) = process_data(data, cat_features, num_features)
+    (train_cat_X, train_num_X, _), (valid_cat_X, valid_num_X, valid_y) = process_data(data, cat_features, num_features)
 
     # Custom Dataset 클래스 정의
 
 
     # 학습용, 검증용 데이터셋 생성
-    train_dataset = AutoEncoderDataset(train_cat_X, train_num_X, device)
-    valid_dataset = AutoEncoderDataset(valid_cat_X, valid_num_X, device)
+    train_dataset = AEtrainDataset(train_cat_X, train_num_X, device)
+    valid_dataset = AEvalidDataset(valid_cat_X, valid_num_X, valid_y, device)
 
 
     # 데이터 로더 (배치 생성)
@@ -84,4 +97,3 @@ if __name__ == '__main__':
             loss = criterion(output, original_x)
             loss.backward()
             optimizer.step()
-
