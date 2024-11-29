@@ -21,7 +21,7 @@ def objective(trial):
     data = util.process_data(args.data_path)
     data_loader = DataLoader(data, batch_size=args.batch_size, shuffle=True)
     
-    run["parameters"] = params
+    run["parameters"] = 
 
     model = model.myModel(args.encoding_dim, args.cat_features, args.num_features, args.num_classes, args.dropout_rate)
     optimizer = torch.optim.Adam(model.parameters(), lr=trial.suggest_loguniform('lr', 1e-4, 1e-2))
