@@ -6,8 +6,8 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 import os
 import json
-from Models.AutoEncoder import AutoEncoder, AEvalidDataset, AEtrainDataset
-from utils.preprocess import process_data
+from Models.AutoEncoder import AutoEncoder, AE_validDataset, AE_trainDataset
+from utils.utils import process_data
 from sklearn.metrics import f1_score
 import numpy as np
 
@@ -44,8 +44,8 @@ def objective(trial):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     # 데이터로더 초기화
-    train_dataset = AEtrainDataset(train_cat_X, train_num_X, device)
-    valid_dataset = AEvalidDataset(valid_cat_X, valid_num_X, valid_y, device)
+    train_dataset = AE_trainDataset(train_cat_X, train_num_X, device)
+    valid_dataset = AE_validDataset(valid_cat_X, valid_num_X, valid_y, device)
     train_loader = DataLoader(train_dataset, batch_size=config["batch_size"], shuffle=True)
     valid_loader = DataLoader(valid_dataset, batch_size=config["batch_size"], shuffle=False)
     

@@ -14,12 +14,11 @@ class AutoEncoder(BaseModel):
         super(AutoEncoder, self).__init__(encoding_dim, cat_features, num_features, num_classes)
         self.input_dim = len(cat_features) * 5 + len(num_features)
         self.decoder = nn.Sequential(
-            nn.Linear(encoding_dim, 64),
-            nn.ReLU(),
-            nn.Linear(64, 64),
-            nn.ReLU(),
-            nn.Linear(64, self.input_dim),
-            nn.ReLU()
+            nn.Linear(encoding_dim, 48),
+            nn.BatchNorm1d(48),
+            nn.LeakyReLU(),
+            nn.Linear(48, self.input_dim)
+            
         )
 
     def forward(self, x_cat, x_num):
@@ -41,7 +40,7 @@ class AutoEncoder(BaseModel):
 
     
 ## Train Dataset
-class AEtrainDataset(Dataset):
+class AE_trainDataset(Dataset):
     def __init__(self, cat_features, num_features, device):
         self.cat_features = torch.tensor(cat_features.values, dtype=torch.long).to(device)
         self.num_features = torch.tensor(num_features.values, dtype=torch.float).to(device)
@@ -52,17 +51,18 @@ class AEtrainDataset(Dataset):
         return self.cat_features[idx], self.num_features[idx]
 
 ## Valid Dataset
-class AEvalidDataset(Dataset):
+class AE_validDataset(Dataset):
     def __init__(self, cat_features, num_features, y, device):
         self.cat_features = torch.tensor(cat_features.values, dtype=torch.long).to(device)
         self.num_features = torch.tensor(num_features.values, dtype=torch.float).to(device)
-        self.y = y
+        # y를 numpy array로 변환
+        self.y = torch.tensor(y.values, dtype=torch.float).to(device)
 
     def __len__(self):
         return len(self.cat_features)
     
     def __getitem__(self, idx):
-        return self.cat_features[idx], self.num_features[idx] , self.y[idx]
+        return self.cat_features[idx], self.num_features[idx], self.y[idx]
     
 if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -75,8 +75,8 @@ if __name__ == '__main__':
 
 
     # 학습용, 검증용 데이터셋 생성
-    train_dataset = AEtrainDataset(train_cat_X, train_num_X, device)
-    valid_dataset = AEvalidDataset(valid_cat_X, valid_num_X, valid_y, device)
+    train_dataset = AE_trainDataset(train_cat_X, train_num_X, device)
+    valid_dataset = AE_validDataset(valid_cat_X, valid_num_X, valid_y, device)
 
 
     # 데이터 로더 (배치 생성)
