@@ -1,0 +1,10 @@
+{
+  "mode": "async",
+  "containerId": "9d9d00be-936f-40b4-812b-2e2d37269db1",
+  "containerType": "run",
+  "structureVersion": 3,
+  "os": "Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "pythonVersion": "3.12.2 | packaged by conda-forge | (main, Feb 16 2024, 20:50:58) [GCC 12.3.0]",
+  "neptuneClientVersion": "1.12.0",
+  "createdAt": "2024-11-30T14:21:20.070485+00:00"
+}

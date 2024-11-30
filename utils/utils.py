@@ -137,7 +137,7 @@ def get_target(df: pd.DataFrame) -> pd.DataFrame :
     if 'Is Fraud?' not in df.columns:
         raise ValueError("GET_TARGET ValueError : NO TARGET IN GIVEN DATASET")
 
-    target = pd.DataFrame(df['Is Fraud?'] == 'Yes').astype(float)
+    target = pd.DataFrame(df['Is Fraud?'] == 'Yes').astype(int)
 
     return target
 
