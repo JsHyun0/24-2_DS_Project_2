@@ -36,10 +36,11 @@ class AutoEncoder(BaseModel):
     
     # 임베딩 추출, torch.eval() 모드에서 사용
     def get_embedding(self, x_cat, x_num):
-        embeddings = [emb(x_cat[:, i]) for i, emb in enumerate(self.cat_embeddings)]
-        original_x = torch.cat(embeddings + [x_num], dim=1)
-        x = self.fc_cat(original_x)
-        encoded = self.encoder(x)
+        with torch.no_grad():
+            embeddings = [emb(x_cat[:, i]) for i, emb in enumerate(self.cat_embeddings)]
+            original_x = torch.cat(embeddings + [x_num], dim=1)
+            x = self.fc_cat(original_x)
+            encoded = self.encoder(x)
         return encoded
  
 
