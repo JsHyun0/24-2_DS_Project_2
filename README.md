@@ -8,8 +8,8 @@ Fraud Detection 모델 학습 및 예측
 - Python 3.12.4
 - PyTorch 2.1.1
 - CUDA 12.1
-> pip install -r pip_requirements.txt
-> conda install --file conda_requirements.txt
+> pip install -r requirements_pip.txt
+> conda install --file requirements_conda.txt
 
 ## 프로젝트 구조
 ```
