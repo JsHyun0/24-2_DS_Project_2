@@ -70,6 +70,18 @@ class AE_validDataset(Dataset):
     def __getitem__(self, idx):
         return self.cat_features[idx], self.num_features[idx], self.y[idx]
     
+class AE_Dataset(Dataset):
+    def __init__(self, cat_features, num_features, y, device):
+        self.cat_features = torch.tensor(cat_features.values, dtype=torch.long).to(device)
+        self.num_features = torch.tensor(num_features.values, dtype=torch.float).to(device)
+        self.y = torch.tensor(y.values, dtype=torch.float).to(device)
+
+    def __len__(self):
+        return len(self.cat_features)
+
+    def __getitem__(self, idx):
+        return self.cat_features[idx], self.num_features[idx], self.y[idx]
+        
 
 if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
