@@ -8,7 +8,7 @@ import torch.optim as optim
 import pandas as pd
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
-from model import BaseModel
+from Models.model import BaseModel
 from utils.utils import process_data
 from tqdm import tqdm
 from sklearn.metrics import f1_score
@@ -36,10 +36,11 @@ class AutoEncoder(BaseModel):
     
     # 임베딩 추출, torch.eval() 모드에서 사용
     def get_embedding(self, x_cat, x_num):
-        embeddings = [emb(x_cat[:, i]) for i, emb in enumerate(self.cat_embeddings)]
-        original_x = torch.cat(embeddings + [x_num], dim=1)
-        x = self.fc_cat(original_x)
-        encoded = self.encoder(x)
+        with torch.no_grad():
+            embeddings = [emb(x_cat[:, i]) for i, emb in enumerate(self.cat_embeddings)]
+            original_x = torch.cat(embeddings + [x_num], dim=1)
+            x = self.fc_cat(original_x)
+            encoded = self.encoder(x)
         return encoded
  
 

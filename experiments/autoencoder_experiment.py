@@ -22,9 +22,9 @@ def objective(trial):
     config = {
         "encoding_dim": trial.suggest_int("encoding_dim", 8, 32),
         "batch_size": trial.suggest_categorical("batch_size", [32, 64, 128, 256]),
-        "lr": trial.suggest_loguniform("lr", 1e-4, 1e-2),
-        "epochs": 100,
-        "threshold": 0.2,  # 이상치 탐지를 위한 임계값
+        "lr": trial.suggest_categorical("lr", [1e-3, 1e-4, 1e-5]),
+        "epochs": 300,
+        "threshold_percentile": trial.suggest_int("threshold_percentile", 90, 95),
     }
     
     # 데이터 준비
@@ -67,36 +67,56 @@ def objective(trial):
     
     # 4. 학습 및 평가
     best_f1 = 0
+    l1_lambda = 1e-5
     model_filename = f"AE_dim{config['encoding_dim']}_batch{config['batch_size']}_lr{config['lr']:.6f}.pth"
     
     for epoch in range(config["epochs"]):
         # 학습 단계
         model.train()
+        train_loss = 0
         for cat_features, num_features in train_loader:
             optimizer.zero_grad()
             y_hat, y = model(cat_features, num_features)
-            loss = criterion(y_hat, y)
+            
+            # MSE 손실 계산
+            mse_loss = criterion(y_hat, y)
+            
+            # L1 정규화 계산
+            l1_reg = torch.tensor(0., requires_grad=True).to(device)
+            for param in model.parameters():
+                l1_reg = l1_reg + torch.norm(param, 1)
+            
+            # 총 손실 = MSE 손실 + L1 정규화
+            loss = mse_loss + l1_lambda * l1_reg
+            
             loss.backward()
             optimizer.step()
+            train_loss += loss.item()
+        
+        # 평균 train_loss 계산
+        train_loss /= len(train_loader)
         
         # 검증 단계 (10 에포크마다)
         if epoch % 10 == 0:
-            run["metrics/train_loss"].log(loss.item())
+            run["metrics/train_loss"].log(train_loss)
             model.eval()
+            valid_loss = 0
             reconstruction_errors = []
             all_labels = []
             
             with torch.no_grad():
-                for cat_features, num_features, label in valid_loader:
+                for cat_features, num_features, labels in valid_loader:
                     y_hat, y = model(cat_features, num_features)
-                    reconstruction_errors.extend(
-                        torch.mean((y_hat - y) ** 2, dim=1).cpu().numpy()
-                    )
-                    all_labels.extend(label.cpu().numpy())
+                    batch_loss = criterion(y_hat, y)
+                    valid_loss += batch_loss.item()
+                    
+                    sample_errors = torch.mean((y_hat - y) ** 2, dim=1)
+                    reconstruction_errors.extend(sample_errors.cpu().numpy())
+                    all_labels.extend(labels.cpu().numpy())
                 
                 # 성능 평가
-                valid_loss = np.mean(reconstruction_errors)
-                predictions = (np.array(reconstruction_errors) > config["threshold"]).astype(int)
+                threshold = np.percentile(reconstruction_errors, config["threshold_percentile"])
+                predictions = (np.array(reconstruction_errors) > threshold).astype(int)
                 f1 = f1_score(all_labels, predictions)
                 
                 # 결과 로깅
