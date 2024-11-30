@@ -8,7 +8,7 @@ import torch.optim as optim
 import pandas as pd
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
-from model import BaseModel
+from Models.model import BaseModel
 from utils.utils import process_data
 from tqdm import tqdm
 from sklearn.metrics import f1_score

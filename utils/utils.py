@@ -184,12 +184,62 @@ def process_data(data_path: str, cat_features: List[str], num_features: List[str
     print("ENCODE")
     train_df, valid_df, label_encoders = encode(train_df, valid_df, cat_features)
 
+    print("UNLABEL")
+    train_df = discard_label(train_df)
+
     print("TARGET")
     train_y = get_target(train_df)
     valid_y = get_target(valid_df)
 
-    print("UNLABEL")
-    train_df = discard_label(train_df)
+    print("TRAIN CAT/NUM")
+    train_cat_x = train_df[cat_features]
+    train_num_x = train_df[num_features]
+
+    print("VALID CAT/NUM")
+    valid_num_x = valid_df[num_features]
+    valid_cat_x = valid_df[cat_features]
+
+    print("RETURN")
+    return (train_cat_x, train_num_x, train_y), (valid_cat_x, valid_num_x, valid_y), label_encoders
+
+def dt_process_data(data_path: str, cat_features: List[str], num_features: List[str], discarded: List[str]) -> Tuple:
+    try:
+        df = pd.read_csv(data_path)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"CAN NOT FIND DATA AT : {data_path}")
+    except Exception as e:
+        raise Exception(f"ERROR RAISED DURING LOADING DATA: {str(e)}")
+
+    if df.empty:
+        raise ValueError("ValueError : EMPTY DATASET")
+
+    if 'Is Fraud?' not in df.columns:
+        raise ValueError("ValueError : NO TARGET IN GIVEN DATASET")
+
+    label_encoders = {}
+
+    print("TRANSITION")
+    df = translation(df)
+
+    print("IQR")
+    df = iqr(df, num_features)
+
+    print("SPLIT")
+    train_df, valid_df = split_by_date(df)
+
+    print("DISCARD")
+    train_df = discard(train_df, discarded)
+    valid_df = discard(valid_df, discarded)
+
+    print("SCALE")
+    train_df, valid_df = scale(train_df, valid_df, num_features)
+
+    print("ENCODE")
+    train_df, valid_df, label_encoders = encode(train_df, valid_df, cat_features)
+
+    print("TARGET")
+    train_y = get_target(train_df)
+    valid_y = get_target(valid_df)
 
     print("TRAIN CAT/NUM")
     train_cat_x = train_df[cat_features]
