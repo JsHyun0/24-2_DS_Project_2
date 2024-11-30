@@ -169,5 +169,5 @@ Jiseung/
 Jiseung/*
 
 saved_models/*
-.neptune/
-.neptune/*
+experiments/.neptune/
+experiments/.neptune/*
