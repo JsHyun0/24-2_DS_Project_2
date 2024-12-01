@@ -28,9 +28,9 @@ def objective(trial):
     }
     
     # 데이터 준비
-    cat_features = ['Gender', 'Card Brand', 'Card Type', 'Expires', 'Has Chip', 
+    cat_features = ['Card', 'Gender', 'Card Brand', 'Card Type', 'Expires', 'Has Chip', 
                    'Year PIN last Changed', 'Whether Security Chip is Used', 'Day']
-    num_features = ['Current Age', 'Retirement Age', 'Per Capita Income - Zipcode', 
+    num_features = ['Current Age', 'Retirement Age', 'Per Capita Income - Zipcode', 'Zipcode',
                    'Yearly Income', 'Total Debt', 'Credit Score', 'Credit Limit', 'Amount']
     
     # 데이터 로드 및 전처리
@@ -55,6 +55,13 @@ def objective(trial):
         cat_features=cat_features,
         num_features=num_features
     ).to(device)
+    
+    # Kaiming Initialization 적용
+    for name, param in model.named_parameters():
+        if isinstance(param, nn.Linear):
+            nn.init.kaiming_normal_(param.weight, mode='fan_in', nonlinearity='relu')
+            if param.bias is not None:
+                nn.init.zeros_(param.bias)
     
     # Neptune 로깅 설정
     run["model/source_code"] = open("Models/AutoEncoder.py", "r").read()
