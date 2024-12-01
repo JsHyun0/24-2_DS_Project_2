@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import neptune
 import optuna
 import torch
@@ -20,24 +24,26 @@ def objective(trial):
     
     # 실험 설정
     config = {
-        "encoding_dim": trial.suggest_int("encoding_dim", 8, 32),
-        "batch_size": trial.suggest_categorical("batch_size", [32, 64, 128, 256]),
+        "encoding_dim": trial.suggest_int("encoding_dim", 16, 32),
+        "batch_size": trial.suggest_categorical("batch_size", [128, 256]),
         "lr": trial.suggest_categorical("lr", [1e-3, 1e-4, 1e-5]),
         "epochs": 300,
         "threshold_percentile": trial.suggest_int("threshold_percentile", 90, 95),
+        "l1_lambda": trial.suggest_categorical("l1_lambda", [1e-4, 1e-5, 1e-6, ])
     }
-    
+    run["tags"] = ["ver2.0"]
     # 데이터 준비
     cat_features = ['Card', 'Gender', 'Card Brand', 'Card Type', 'Expires', 'Has Chip', 
-                   'Year PIN last Changed', 'Whether Security Chip is Used', 'Day']
+                    'Year PIN last Changed', 'Whether Security Chip is Used', 'Day']
     num_features = ['Current Age', 'Retirement Age', 'Per Capita Income - Zipcode', 'Zipcode',
-                   'Yearly Income', 'Total Debt', 'Credit Score', 'Credit Limit', 'Amount']
-    
+                    'Yearly Income', 'Total Debt', 'Credit Score', 'Credit Limit', 'Amount']
+    discarded = ['User', 'Birth Year', 'Birth Month']
     # 데이터 로드 및 전처리
     (train_cat_X, train_num_X, _), (valid_cat_X, valid_num_X, valid_y) = process_data(
         './Data/[24-2 DS_Project2] Data.csv', 
         cat_features, 
-        num_features
+        num_features,
+        discarded
     )
     
     # 3. 모델 및 데이터로더 설정
@@ -73,9 +79,9 @@ def objective(trial):
     criterion = nn.MSELoss()
     
     # 4. 학습 및 평가
-    best_f1 = 0
-    l1_lambda = 1e-5
-    model_filename = f"AE_dim{config['encoding_dim']}_batch{config['batch_size']}_lr{config['lr']:.6f}.pth"
+    best_valid = 0
+    l1_lambda = config["l1_lambda"]
+    model_filename = f"AE_dim{config['encoding_dim']}_batch{config['batch_size']}_lr{config['lr']:.6f}_l1{l1_lambda:.6f}.pth"
     
     for epoch in range(config["epochs"]):
         # 학습 단계
@@ -132,17 +138,17 @@ def objective(trial):
                 print(f"Epoch {epoch}: Valid Loss = {valid_loss:.4f}, F1 Score = {f1:.4f}")
                 
                 # 최고 성능 모델 저장
-                if f1 > best_f1:
-                    best_f1 = f1
+                if valid_loss < best_valid:
+                    best_valid = valid_loss
                     torch.save(model.state_dict(), f"experiments/AutoEncoder/{model_filename}")
                     run["artifacts/best_model"].upload(f"experiments/AutoEncoder/{model_filename}")
     
     run.stop()
-    return best_f1
+    return best_valid
 
 if __name__ == "__main__":
     # Optuna 학습 시작 (최소화 방향으로 설정)
-    study = optuna.create_study(direction="maximize")
+    study = optuna.create_study(direction="minimize")
     study.optimize(objective, n_trials=50)
     
     # 최적의 하이퍼파라미터 저장

@@ -26,7 +26,7 @@ class AutoEncoder(BaseModel):
         )
 
     def forward(self, x_cat, x_num):
-        original_x = torch.cat(x_cat, x_num)
+        original_x = torch.cat([x_cat]+ [x_num], dim=1)
         embeddings = [emb(x_cat[:, i]) for i, emb in enumerate(self.cat_embeddings)]
         x = torch.cat(embeddings + [x_num], dim=1)
         x = self.fc_cat(x)
