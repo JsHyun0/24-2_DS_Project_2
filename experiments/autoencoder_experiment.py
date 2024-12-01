@@ -1,6 +1,15 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from tqdm import tqdm, trange
+
+# 프로젝트 루트 디렉토리를 Python 경로에 추가
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(PROJECT_ROOT)
+
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv(os.path.join(PROJECT_ROOT, '.env'))
 
 import neptune
 import optuna
@@ -8,12 +17,12 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-import os
 import json
 from Models.AutoEncoder import AutoEncoder, AE_validDataset, AE_trainDataset
 from utils.utils import process_data
 from sklearn.metrics import f1_score
 import numpy as np
+
 
 def objective(trial):
     # 1. 초기 설정
