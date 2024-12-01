@@ -17,23 +17,22 @@ from sklearn.metrics import f1_score
 class AutoEncoder(BaseModel):
     def __init__(self, encoding_dim, cat_features, num_features, num_classes=1):
         super(AutoEncoder, self).__init__(encoding_dim, cat_features, num_features, num_classes)
-        self.input_dim = len(cat_features) * 5 + len(num_features)
+        self.input_dim = len(cat_features) + len(num_features)
         self.decoder = nn.Sequential(
             nn.Linear(encoding_dim, 48),
             nn.BatchNorm1d(48),
             nn.LeakyReLU(),
             nn.Linear(48, self.input_dim)
-            
         )
 
     def forward(self, x_cat, x_num):
+        original_x = torch.cat(x_cat, x_num)
         embeddings = [emb(x_cat[:, i]) for i, emb in enumerate(self.cat_embeddings)]
-        original_x = torch.cat(embeddings + [x_num], dim=1)
-        x = self.fc_cat(original_x)
+        x = torch.cat(embeddings + [x_num], dim=1)
+        x = self.fc_cat(x)
         encoded = self.encoder(x)
         decoded = self.decoder(encoded)
         return decoded, original_x
-    
     # 임베딩 추출, torch.eval() 모드에서 사용
     def get_embedding(self, x_cat, x_num):
         with torch.no_grad():
