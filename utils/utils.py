@@ -48,6 +48,10 @@ def translation(df: pd.DataFrame) -> pd.DataFrame :
 
     trans['Since Open Month'] = (trans['Year'] - trans['Acct Open Date'].str[-4:].astype(int)) * 12 + (trans['Month'] - trans['Acct Open Date'].str[:2].astype(int)).astype(int)
 
+    trans = zipcode(trans)
+
+    trans = convert_date_to_weekday(trans, 'Year', 'Month', 'Day')
+
     # whole dataset
     return trans
 
@@ -71,6 +75,38 @@ def split_by_date(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame] :
 
 
     return train_df, val_df
+
+def zipcode(df) :
+    trans = df.copy()
+    trans['Zipcode'] = (trans['Zipcode'] // 10000).astype(str)
+    return trans
+
+def convert_date_to_weekday(df, col_Year, col_Month, col_Day):
+
+    # 날짜 컬럼 생성
+    df['WeekDay'] = pd.to_datetime(
+        df[col_Year].astype(str) + '-' +
+        df[col_Month].astype(str).str.zfill(2) + '-' +
+        df[col_Day].astype(str).str.zfill(2)
+    )
+
+    # 요일 추출 (0=월요일, 6=일요일)
+    df['WeekDay'] = df['WeekDay'].dt.dayofweek
+
+    # 요일 이름으로 변환
+    weekday_map = {
+        0: 'MON',
+        1: 'TUE',
+        2: 'WED',
+        3: 'THU',
+        4: 'FRI',
+        5: 'SAT',
+        6: 'SUN'
+    }
+
+    df['WeekDay'] = df['WeekDay'].map(weekday_map)
+
+    return df
 
 ## num_features
 def iqr(df: pd.DataFrame, num_features: List[str]) -> pd.DataFrame :
