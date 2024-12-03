@@ -1,5 +1,6 @@
 import pandas as pd
 import torch
+import numpy as np
 from jupyterlab.semver import valid
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from typing import Tuple, List
@@ -25,57 +26,6 @@ def evaluate_test(model, data):
 
 
 # Data Preprocess
-## feature modify
-def translation(df: pd.DataFrame) -> pd.DataFrame :
-    if 'Acct Open Date' not in df.columns :
-        raise ValueError("TRANSITION ValueError : 'Acct Open Date' COLUMN DOES NOT EXIST")
-
-    if 'Error Message' not in df.columns :
-        raise ValueError("TRANSITION ValueError : 'Error Message' COLUMN DOES NOT EXIST")
-
-    if 'Year' not in df.columns :
-        raise ValueError("Year ValueError : 'Year' COLUMN DOES NOT EXIST")
-
-    if 'Month' not in df.columns :
-        raise ValueError("Month ValueError : 'Month' COLUMN DOES NOT EXIST")
-
-    if 'Day' not in df.columns :
-        raise ValueError("Day ValueError : 'Day' COLUMN DOES NOT EXIST")
-
-    trans = df.copy()
-
-    trans['Error Message'] = trans['Error Message'].astype(bool)
-
-    trans['Since Open Month'] = (trans['Year'] - trans['Acct Open Date'].str[-4:].astype(int)) * 12 + (trans['Month'] - trans['Acct Open Date'].str[:2].astype(int)).astype(int)
-
-    trans = zipcode(trans)
-
-    trans = convert_date_to_weekday(trans, 'Year', 'Month', 'Day')
-
-    # whole dataset
-    return trans
-
-# MUST BE EXECUTED AFTER TRANSITION
-def discard(df: pd.DataFrame, discarded : List[str]) -> pd.DataFrame :
-    if not all(feature in df.columns for feature in discarded) :
-        raise ValueError("DISCARD ValueError : NO COLUMN IN GIVEN DATASET")
-
-    # whole dataset
-    return df.drop(columns=discarded)
-
-## Train-Valid Set split
-def split_by_date(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame] :
-    # Value Error : There is no any Month in given DATASET
-    if 'Month' not in df.columns :
-        raise ValueError("SPLIT ValueError : 'Month' COLUMN DOES NOT EXIST.")
-
-    mask = df['Month'].between(TRAIN_MONTH_START, TRAIN_MONTH_END)
-    train_df = df[mask]
-    val_df = df[~mask]
-
-
-    return train_df, val_df
-
 def zipcode(df) :
     trans = df.copy()
     trans['Zipcode'] = (trans['Zipcode'] // 10000).astype(str)
@@ -107,6 +57,117 @@ def convert_date_to_weekday(df, col_Year, col_Month, col_Day):
     df['WeekDay'] = df['WeekDay'].map(weekday_map)
 
     return df
+
+def security_level(df: pd.DataFrame) -> pd.DataFrame:
+    df['Years Changed PIN'] = df['Year'] - df['Year PIN last Changed']
+
+    # PIN 변경 기간에 따른 점수 조건
+    conditions = [
+        (df['Years Changed PIN'] >= 5),
+        (df['Years Changed PIN'] < 5),
+        (df['Years Changed PIN'] < 3),
+        (df['Years Changed PIN'] < 1),
+        (df['Years Changed PIN'] < 0)
+    ]
+
+    choices = [0, 0.25, 0.5, 0.75, 1]
+
+    level = ['BAD', "LOW", "NORMAL", "HIGH", "SECURE"]
+
+    # PIN 점수 계산
+    df['PIN Change'] = np.select(conditions, choices, default=0)
+
+    # 최종 보안 레벨 계산
+    df['Security Score'] = (df['Has Chip'].astype(int) * 0.3 + df['PIN Change'] * 0.7)
+
+    # 조건을 내림차순으로 변경
+    levels = [
+        (df['Security Score'] >= 0.8),
+        (df['Security Score'] >= 0.6),
+        (df['Security Score'] >= 0.4),
+        (df['Security Score'] >= 0.2),
+        (df['Security Score'] >= 0)
+    ]
+
+    df['Security Level'] = np.select(levels, level[::-1], default="BAD")  # level 리스트도 역순으로 적용
+
+    return df
+
+def credit_util(df: pd.DataFrame) -> pd.DataFrame:
+    df['Credit Util'] = df['Amount'] / df['Credit Limit']
+    df['Credit Util'] = np.where(np.isinf(df['Credit Util']), 1, df['Credit Util'])
+    df['Credit Util'] = np.where(df['Credit Limit'] == 0, 1, df['Credit Util'])
+    df['Credit Util'] = np.where(df['Amount'] == 0, 1, df['Credit Util'])
+    conditions = [
+        (df['Credit Util'] <= 0.2),
+        (df['Credit Util'] <= 0.5),
+        (df['Credit Util'] <= 0.8),
+        (df['Credit Util'] > 0.8)
+    ]
+
+    choices = ['NORMAL', 'CAUTION', 'WARNING', 'DANGER']
+
+    df['Credit Signal'] = np.select(conditions, choices, default='DANGER')
+
+    return df
+
+## feature modify
+def translation(df: pd.DataFrame) -> pd.DataFrame :
+    if 'Acct Open Date' not in df.columns :
+        raise ValueError("TRANSITION ValueError : 'Acct Open Date' COLUMN DOES NOT EXIST")
+
+    if 'Error Message' not in df.columns :
+        raise ValueError("TRANSITION ValueError : 'Error Message' COLUMN DOES NOT EXIST")
+
+    if 'Year' not in df.columns :
+        raise ValueError("Year ValueError : 'Year' COLUMN DOES NOT EXIST")
+
+    if 'Month' not in df.columns :
+        raise ValueError("Month ValueError : 'Month' COLUMN DOES NOT EXIST")
+
+    if 'Day' not in df.columns :
+        raise ValueError("Day ValueError : 'Day' COLUMN DOES NOT EXIST")
+
+    trans = df.copy()
+
+    # Error Message -> bool
+    trans['Error Message'] = trans['Error Message'].astype(bool)
+    # zipcode mapping by Administrative district
+    trans = zipcode(trans)
+    # Add Transaction Week
+    trans = convert_date_to_weekday(trans, 'Year', 'Month', 'Day')
+    # Add Months from Account Open Date
+    trans['Since Open Month'] = (trans['Year'] - trans['Acct Open Date'].str[-4:].astype(int)) * 12 + (trans['Month'] - trans['Acct Open Date'].str[:2].astype(int)).astype(int)
+    # Add Valid Months
+    trans['Valid Month'] = (trans['Expires'].str[-4:].astype(int) - trans['Year']) * 12 + (trans['Expires'].str[:2].astype(int)- trans['Month'].astype(int))
+    # Add Credit Utilization
+    trans = credit_util(trans)
+    # Add Security Level
+    trans = security_level(trans)
+
+    # whole dataset
+    return trans
+
+# MUST BE EXECUTED AFTER TRANSITION
+def discard(df: pd.DataFrame, discarded : List[str]) -> pd.DataFrame :
+    if not all(feature in df.columns for feature in discarded) :
+        raise ValueError("DISCARD ValueError : NO COLUMN IN GIVEN DATASET")
+
+    # whole dataset
+    return df.drop(columns=discarded)
+
+## Train-Valid Set split
+def split_by_date(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame] :
+    # Value Error : There is no any Month in given DATASET
+    if 'Month' not in df.columns :
+        raise ValueError("SPLIT ValueError : 'Month' COLUMN DOES NOT EXIST.")
+
+    mask = df['Month'].between(TRAIN_MONTH_START, TRAIN_MONTH_END)
+    train_df = df[mask]
+    val_df = df[~mask]
+
+
+    return train_df, val_df
 
 ## num_features
 def iqr(df: pd.DataFrame, num_features: List[str]) -> pd.DataFrame :
@@ -155,8 +216,6 @@ def encode(train_df: pd.DataFrame, valid_df: pd.DataFrame, cat_features: List[st
     # ValueError - NO COLUMN
     if not all(feature in train_df.columns for feature in cat_features) :
         raise ValueError("ENCODE ValueError : NO COLUMN IN GIVEN DATASET")
-    if not all(feature in valid_df.columns for feature in cat_features) :
-        raise ValueError("ENCODE ValueError : NO COLUMN IN GIVEN DATASET")
 
     label_encoders = {}
 
@@ -203,6 +262,7 @@ def process_data(data_path: str, cat_features: List[str], num_features: List[str
 
     print("TRANSITION")
     df = translation(df)
+    trans = df.copy()
 
     print("IQR")
     df = iqr(df, num_features)
@@ -236,7 +296,9 @@ def process_data(data_path: str, cat_features: List[str], num_features: List[str
     valid_cat_x = valid_df[cat_features]
 
     print("RETURN")
-    return (train_cat_x, train_num_x, train_y), (valid_cat_x, valid_num_x, valid_y), label_encoders
+    return ((train_cat_x, train_num_x, train_y),
+            (valid_cat_x, valid_num_x, valid_y),
+            label_encoders, trans)
 
 def dt_process_data(data_path: str, cat_features: List[str], num_features: List[str], discarded: List[str]) -> Tuple:
     try:
@@ -256,6 +318,7 @@ def dt_process_data(data_path: str, cat_features: List[str], num_features: List[
 
     print("TRANSITION")
     df = translation(df)
+    trans = df.copy()
 
     print("IQR")
     df = iqr(df, num_features)
@@ -286,5 +349,7 @@ def dt_process_data(data_path: str, cat_features: List[str], num_features: List[
     valid_cat_x = valid_df[cat_features]
 
     print("RETURN")
-    return (train_cat_x, train_num_x, train_y), (valid_cat_x, valid_num_x, valid_y), label_encoders
+    return ((train_cat_x, train_num_x, train_y),
+            (valid_cat_x, valid_num_x, valid_y),
+            label_encoders, trans)
 
