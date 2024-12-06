@@ -26,8 +26,7 @@ class Cholesky(torch.autograd.Function):
 class DAGMM(BaseModel):
     def __init__(self, encoding_dim, n_gmm, cat_features, num_features, num_classes=1):
         super(DAGMM, self).__init__(encoding_dim, cat_features, num_features, num_classes)
-        self.input_dim = len(cat_features) * 5 + len(num_features)
-
+        self.input_dim = len(cat_features) + len(num_features)
         self.AEDecoder = nn.Sequential(
             nn.Linear(encoding_dim, 48),
             nn.BatchNorm1d(48),
@@ -150,7 +149,7 @@ class DAGMM(BaseModel):
 
 
         # reconsturction error 구하기
-        rec_mse = self.mse_reconstruction_error(x, dec)
+        rec_mse = self.mse_reconstruction_error(original_x, dec)
         #rec_cosine = F.cosine_similarity(x, dec, dim=1)
         #rec_euclidian = self.euclidian_distance(x, dec)
 
@@ -158,7 +157,7 @@ class DAGMM(BaseModel):
 
         gamma = self.estimation(z)
 
-        return enc, dec, z, gamma
+        return original_x, enc, dec, z, gamma
 
     def loss(self, x, x_hat, z, gamma, lambda_energy, lambda_cov_diag):
         # 복원 손실 계산
