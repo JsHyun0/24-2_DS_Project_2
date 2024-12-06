@@ -5,12 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="01e12590-6709-4d7a-a13f-e1af96c45dbd" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/24-2_DS_Project_2.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/24-2_DS_Project_2.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/experiments/autoencoder_experiment_ver3.0.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/test.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/experiments/autoencoder_experiment.py" beforeDir="false" afterPath="$PROJECT_DIR$/experiments/autoencoder_experiment.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -20,8 +17,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Python Script" />
         <option value="Jupyter Notebook" />
+        <option value="Python Script" />
       </list>
     </option>
   </component>
@@ -58,21 +55,25 @@
     "RunOnceActivity.git.unshallow": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "database.data.extractors.current.export.id": "Comma-separated (CSV)_id",
-    "git-widget-placeholder": "IS__AddFeature",
+    "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/GitProjects/24-2_DS_Project_2",
+    "last_opened_file_path": "C:/GitProjects/24-2_DS_Project_2/experiments",
     "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\GitProjects\24-2_DS_Project_2\experiments" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\GitProjects\24-2_DS_Project_2\Models" />
+      <recent name="C:\GitProjects\24-2_DS_Project_2" />
       <recent name="C:\Users\mose1\Documents\project\ds\24-2_DS_Project_2\experiments" />
       <recent name="C:\GitProjects\24-2_DS_Project_2\legacy" />
       <recent name="$PROJECT_DIR$/Data" />
-      <recent name="$PROJECT_DIR$" />
-      <recent name="$PROJECT_DIR$/utils" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -117,5 +118,16 @@
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
 </project>
