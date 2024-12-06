@@ -1,5 +1,12 @@
+
 import sys
 import os
+
+# 프로젝트 루트 디렉토리를 Python 경로에 추가
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(PROJECT_ROOT)
+
+
 from tqdm import tqdm, trange
 from sklearn.metrics import f1_score, recall_score, precision_score, accuracy_score, confusion_matrix
 import neptune
@@ -12,14 +19,9 @@ import json
 from Models.DAGMM import *
 from Models.AutoEncoder import *
 from utils.utils import *
-from sklearn.metrics import f1_score
 import numpy as np
 from dotenv import load_dotenv
 import time  # 파일 상단에 import 추가
-
-# 프로젝트 루트 디렉토리를 Python 경로에 추가
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(PROJECT_ROOT)
 
 # .env 파일 로드
 load_dotenv(os.path.join(PROJECT_ROOT, '.env'))
@@ -34,11 +36,11 @@ def objective(trial):
     # 실험 설정
     config = {
         "encoding_dim": trial.suggest_int("encoding_dim", 18, 32),
-        "batch_size": trial.suggest_categorical("batch_size", [128, 256]),
+        "batch_size": 512,
         "lr": 1e-4,
-        "epochs": 500,
+        "epochs": 300,
         "threshold_percentile": 95,
-        "n_gmm": trial.suggest_int("n_gmm", 1,5),
+        "n_gmm": trial.suggest_categorical("n_gmm", [4, 8, 10]),
         "lambda_energy": 0.1,
         "lambda_cov_diag" : 0.005,
     }
@@ -134,14 +136,16 @@ def objective(trial):
     
     # 4. 학습 및 평가
     model_filename = f"DAGMM_dim{config['encoding_dim']}_batch{config['batch_size']}_lr{config['lr']:.6f}_n-gmm{config['n_gmm']}.pth"
-    
+
+    best_f1 = 0
+
     # tqdm으로 에포크 진행률 표시
-    for epoch in trange(config["epochs"], desc="Training"):
+    for epoch in trange(config["epochs"], desc="Training", position=0, leave=True):
         # 학습 단계
         model.train()
         train_loss = 0
         # tqdm으로 배치 진행률 표시
-        for cat_features, num_features in tqdm(train_loader, desc=f"Epoch {epoch}", leave=False):
+        for cat_features, num_features in tqdm(train_loader, desc=f"Epoch {epoch}", leave=False, position=1):
             
             x, enc, dec, z, gamma = model(cat_features, num_features)
             # MSE 손실 계산
@@ -245,7 +249,7 @@ def objective(trial):
                 run["metrics/f1_score"].log(f1)
                 run["metrics/threshold"].log(threshold)
 
-                print(f"Epoch {epoch}: Train Loss = {train_loss:.4f}, Valid Loss = {valid_loss:.4f}")
+                print(f"Epoch {epoch}: Train Loss = {train_loss:.4f}, Valid Loss = {valid_loss:.4f}, F1 Score = {f1:.4f}, recall = {recall:.4f}, precision = {precision:.4f}, accuracy = {accuracy}")
                 
                 # 최고 성능 모델 저장 및 혼동 행렬 생성
                 if f1 > best_f1:
