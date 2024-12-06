@@ -168,15 +168,16 @@ def objective(trial):
             all_labels = []
             all_z = []  # 잠재 벡터 저장
             
-            # 1. 학습 데이터로 GMM 파라미터 계산
-            N = 0
-            mu_sum = 0
-            cov_sum = 0
-            gamma_sum = 0
-            
             with torch.no_grad():
+                # 1. 학습 데이터로 GMM 파라미터 한 번만 계산
+                N = 0
+                mu_sum = 0
+                cov_sum = 0
+                gamma_sum = 0
+                
                 for cat_features, num_features in train_loader:
                     x, enc, dec, z, gamma = model(cat_features, num_features)
+                    # GMM 파라미터 계산
                     phi, mu, cov = model.compute_gmm_params(z, gamma)
                     
                     batch_gamma_sum = torch.sum(gamma, dim=0)
@@ -190,17 +191,21 @@ def objective(trial):
                 train_mu = mu_sum / gamma_sum.unsqueeze(-1)
                 train_cov = cov_sum / gamma_sum.unsqueeze(-1).unsqueeze(-1)
                 
-                # 2. 검증 데이터에 대한 에너지 계산
+                # 2. 검증 데이터에 대한 평가
+                valid_loss = 0
+                reconstruction_errors = []
+                all_labels = []
+                all_z = []
+                
                 for cat_features, num_features, labels in valid_loader:
                     x, enc, dec, z, gamma = model(cat_features, num_features)
                     
-                    # 학습된 GMM 파라미터로 에너지 계산
-                    sample_energy, cov_diag = model.compute_energy(
+                    # 저장된 GMM 파라미터를 사용하여 에너지 계산
+                    sample_energy = model.compute_energy(
                         z, 
                         phi=train_phi,
                         mu=train_mu, 
-                        cov=train_cov,
-                        size_average=False
+                        cov=train_cov
                     )
                     
                     reconstruction_errors.extend(sample_energy.cpu().numpy())
@@ -232,19 +237,19 @@ def objective(trial):
                 print(f"Epoch {epoch}: Train Loss = {train_loss:.4f}, Valid Loss = {valid_loss:.4f}")
                 
                 # 최고 성능 모델 저장 및 혼동 행렬 생성
-                if valid_loss < best_loss:
-                    best_loss = valid_loss
+                if f1 > best_f1:
+                    best_f1 = f1
                     model_path = os.path.join(save_dir, model_filename)
                     torch.save(model.state_dict(), model_path)
                     run["artifacts/best_model"].upload(model_path)
-                    print(f"새로운 최고 성능 모델 저장됨: {valid_loss:.4f}")
+                    print(f"새로운 최고 성능 모델 저장됨 (F1 Score: {f1:.4f})")
 
 
     
     run.stop()
     # Neptune 로그가 모두 전송될 때까지 대기
     time.sleep(3)
-    return best_loss
+    return best_f1
 
 if __name__ == "__main__":
 
