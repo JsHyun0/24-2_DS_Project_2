@@ -200,6 +200,14 @@ def objective(trial):
                 for cat_features, num_features, labels in valid_loader:
                     x, enc, dec, z, gamma = model(cat_features, num_features)
                     
+                    # 손실 계산 추가
+                    loss, recon_loss, energy, cov_diag = model.loss(
+                        x, dec, z, gamma, 
+                        lambda_energy=config["lambda_energy"], 
+                        lambda_cov_diag=config["lambda_cov_diag"]
+                    )
+                    valid_loss += loss.mean().item()
+                    
                     # 저장된 GMM 파라미터를 사용하여 에너지 계산
                     sample_energy = model.compute_energy(
                         z, 
@@ -211,6 +219,9 @@ def objective(trial):
                     reconstruction_errors.extend(sample_energy.cpu().numpy())
                     all_z.extend(z.cpu().numpy())
                     all_labels.extend(labels.cpu().numpy())
+
+                # 배치 평균 valid_loss 계산
+                valid_loss /= len(valid_loader)
 
                 # 3. 이상치 탐지
                 reconstruction_errors = np.array(reconstruction_errors)
