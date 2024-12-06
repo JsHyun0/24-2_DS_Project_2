@@ -177,3 +177,5 @@ experiments/AutoEncoder/*
 .idea/24-2_DS_Project_2.iml
 .idea/misc.xml
 .idea/workspace.xml
+
+.idea/*
