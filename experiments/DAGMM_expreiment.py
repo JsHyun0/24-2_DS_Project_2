@@ -1,4 +1,3 @@
-
 import sys
 import os
 
@@ -36,7 +35,7 @@ def objective(trial):
     # 실험 설정
     config = {
         "encoding_dim": trial.suggest_int("encoding_dim", 18, 32),
-        "batch_size": 512,
+        "batch_size": 1024,
         "lr": 1e-4,
         "epochs": 300,
         "threshold_percentile": 95,
@@ -129,6 +128,14 @@ def objective(trial):
     
     # 학습 설정
     optimizer = optim.Adam(model.parameters(), lr=config["lr"])
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        mode='max',           # 검증 손실 감소 방향으로 최적화
+        factor=0.2,           # 학습률 50% 감소
+        patience=5,          # 5 에포크 동안 개선이 없으면 학습률 조정
+        verbose=True,         # 학습률 변경 시 메시지 출력
+        min_lr=1e-6          # 최소 학습률
+    )
     
     # 모델 저장 디렉토리 생성
     save_dir = "experiments/DAGMM"
@@ -249,7 +256,15 @@ def objective(trial):
                 run["metrics/f1_score"].log(f1)
                 run["metrics/threshold"].log(threshold)
 
-                print(f"Epoch {epoch}: Train Loss = {train_loss:.4f}, Valid Loss = {valid_loss:.4f}, F1 Score = {f1:.4f}, recall = {recall:.4f}, precision = {precision:.4f}, accuracy = {accuracy}")
+                # 4. 스케줄러 업데이트 및 현재 학습률 로깅
+                scheduler.step(f1)
+                current_lr = optimizer.param_groups[0]['lr']
+                run["metrics/learning_rate"].log(current_lr)
+                
+                print(f"Epoch {epoch}: Train Loss = {train_loss:.4f}, "
+                      f"Valid Loss = {valid_loss:.4f}, "
+                      f"F1 Score = {f1:.4f}, "
+                      f"LR = {current_lr:.6f}")
                 
                 # 최고 성능 모델 저장 및 혼동 행렬 생성
                 if f1 > best_f1:
