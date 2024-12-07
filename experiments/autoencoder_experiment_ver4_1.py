@@ -179,13 +179,13 @@ def objective(trial):
     )
     
     # 모델 저장 디렉토리 생성
-    save_dir = "experiments/AutoEncoder4"
+    save_dir = "experiments/AutoEncoder4_1"
     os.makedirs(save_dir, exist_ok=True)
     
     # 4. 학습 및 평가
     best_loss = float('inf')
     l1_lambda = config["l1_lambda"]
-    model_filename = f"AE4_dim{config['encoding_dim']}_batch{config['batch_size']}_lr{config['lr']:.6f}_l1{l1_lambda:.6f}.pth"
+    model_filename = f"AE4_1_dim{config['encoding_dim']}_batch{config['batch_size']}_lr{config['lr']:.6f}_l1{l1_lambda:.6f}.pth"
     
     # Early Stopping 추가
     early_stopping_patience = 18
@@ -273,8 +273,6 @@ def objective(trial):
 
 if __name__ == "__main__":
 
-    
-    # Optuna 학습 시작 (최대화 방향으로 변경)
     study = optuna.create_study(direction="minimize")
     study.optimize(objective, n_trials=15)
     
