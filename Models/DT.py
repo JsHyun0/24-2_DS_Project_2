@@ -49,11 +49,9 @@ def weigthed_F1(conf_matrix):
     # 가중치를 반영한 F1 점수 계산
     return (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
-def randomforest(#train_X,
-                 train_y,
+def randomforest(train_y,
                  encoded_t,
                  encoded_v,
-                 #valid_X,
                  valid_y,
                  le,
                  random_state=42,
@@ -66,16 +64,14 @@ def randomforest(#train_X,
         min_samples_leaf=min_samples_leaf,
         class_weight=class_weight
     )
-    rf_classifier.fit(encoded_t, train_y)
+    
+    rf_classifier.fit(encoded_t, train_y.squeeze())
 
     y_pred = rf_classifier.predict(encoded_v)
 
-    conf_matrix = confusion_matrix(valid_y, y_pred)
+    conf_matrix = confusion_matrix(valid_y.squeeze(), y_pred)
 
     showHeatMap(conf_matrix, le)
 
     print("report: ")
-    print(classification_report(valid_y, y_pred))
-
-
-
+    print(classification_report(valid_y.values.ravel(), y_pred))
