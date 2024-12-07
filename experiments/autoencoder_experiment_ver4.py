@@ -34,7 +34,7 @@ load_dotenv(os.path.join(PROJECT_ROOT, '.env'))
 class AutoEncoder(BaseModel):
     def __init__(self, encoding_dim, cat_features, num_features, num_classes=1):
         super(AutoEncoder, self).__init__(encoding_dim, cat_features, num_features, num_classes)
-        self.input_dim = len(cat_features) + len(num_features)
+        self.input_dim = len(cat_features)*5 + len(num_features)
         
         # Dropout 추가 및 더 깊은 네트워크 구성
         self.decoder = nn.Sequential(
@@ -52,8 +52,8 @@ class AutoEncoder(BaseModel):
     def forward(self, x_cat, x_num):
         embeddings = [emb(x_cat[:, i]) for i, emb in enumerate(self.cat_embeddings)]
         x = torch.cat(embeddings + [x_num], dim=1)  # 임베딩된 데이터
-        x = self.fc_cat(x)
-        encoded = self.encoder(x)
+        fc_x = self.fc_cat(x)
+        encoded = self.encoder(fc_x)
         decoded = self.decoder(encoded)
         return decoded, x  # 임베딩된 데이터와 비교
     # 임베딩 추출, torch.eval() 모드에서 사용
@@ -72,12 +72,12 @@ def objective(trial):
         api_token=os.getenv("NEPTUNE_API_TOKEN"),
     )
     
-    # 실험 설정
+    # 실험 설정 수정
     config = {
         "encoding_dim": trial.suggest_int("encoding_dim", 24, 36),
         "batch_size": trial.suggest_categorical("batch_size", [256, 512]),
-        "lr": 1e-4,
-        "epochs": 500,
+        "lr": trial.suggest_loguniform("lr", 1e-5, 1e-3),  # lr을 trial 파라미터로 변경
+        "epochs": 300,
         "threshold_percentile": 95,
         "l1_lambda": trial.suggest_loguniform("l1_lambda", 1e-6, 1e-4)
     }
@@ -169,6 +169,15 @@ def objective(trial):
     optimizer = optim.Adam(model.parameters(), lr=config["lr"])
     criterion = nn.MSELoss()
     
+    # scheduler 추가
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, 
+        mode='min', 
+        factor=0.5, 
+        patience=5, 
+        verbose=True
+    )
+    
     # 모델 저장 디렉토리 생성
     save_dir = "experiments/AutoEncoder4"
     os.makedirs(save_dir, exist_ok=True)
@@ -246,7 +255,14 @@ def objective(trial):
             run["metrics/train_loss"].log(train_loss)
             run["metrics/valid_loss"].log(valid_loss)
 
-            print(f"Epoch {epoch}: Train Loss = {train_loss:.4f}, Valid Loss = {valid_loss:.4f}")
+            # scheduler step
+            scheduler.step(valid_loss)
+            
+            # Neptune 로깅에 현재 learning rate 추가
+            current_lr = optimizer.param_groups[0]['lr']
+            run["metrics/learning_rate"].log(current_lr)
+
+            print(f"Epoch {epoch}: Train Loss = {train_loss:.4f}, Valid Loss = {valid_loss:.4f}, LR = {current_lr:.6f}")
             
 
     
