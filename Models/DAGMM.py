@@ -95,19 +95,6 @@ class DAGMM(BaseModel):
         cov_inv = torch.cat(cov_inv, dim=0)
         det_cov = torch.cat(det_cov).cuda()
 
-
-        '''
-        cov_inv = torch.linalg.inv(cov + torch.eye(cov.size(-1)).to(z.device) * eps)
-        cov_inv = cov_inv.unsqueeze(0).repeat(z.size(0), 1, 1, 1)  # (128, 2, 29, 29)
-
-
-        conv1 = (cov_inv @ z_mu.unsqueeze(-1))
-        #print(f"conv1: {conv1.shape}")
-        conv2 = z_mu.unsqueeze(-1) * conv1
-        #print(f"conv2: {conv2.shape}")
-        '''
-
-
         exp_term_tmp = -0.5 * torch.sum(
             torch.sum(z_mu.unsqueeze(-1) * cov_inv.unsqueeze(0), dim=-2) * z_mu, dim=-1
         )
