@@ -28,6 +28,10 @@ sys.path.append(PROJECT_ROOT)
 ### 조건은 Fraud Label 다 제거하여 정상 데이터를 구축하는 성능을 향상하고자 함
 ### 또한 Embedding과 예측하도록 변경함
 ####################################
+######## VER 4.1 ###################
+### Decoder 층 하나 내림
+### 보다 큰 encoding_dim 허용
+####################################
 # .env 파일 로드
 load_dotenv(os.path.join(PROJECT_ROOT, '.env'))
 
@@ -38,11 +42,7 @@ class AutoEncoder(BaseModel):
         
         # Dropout 추가 및 더 깊은 네트워크 구성
         self.decoder = nn.Sequential(
-            nn.Linear(encoding_dim, 48),
-            nn.BatchNorm1d(48),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(48, 64),
+            nn.Linear(encoding_dim, 64),
             nn.BatchNorm1d(64),
             nn.ReLU(),
             nn.Dropout(0.2),
@@ -74,16 +74,16 @@ def objective(trial):
     
     # 실험 설정 수정
     config = {
-        "encoding_dim": trial.suggest_int("encoding_dim", 24, 36),
-        "batch_size": trial.suggest_categorical("batch_size", [256, 512]),
-        "lr": trial.suggest_loguniform("lr", 1e-5, 1e-3),  # lr을 trial 파라미터로 변경
-        "epochs": 500,
+        "encoding_dim": trial.suggest_int("encoding_dim", 28, 48),
+        "batch_size": 256,
+        "lr": 1e-4,  # lr을 trial 파라미터로 변경
+        "epochs": 400,
         "threshold_percentile": 95,
         "l1_lambda": trial.suggest_loguniform("l1_lambda", 1e-6, 1e-4)
     }
     
     # 태그 추가 방식 수정
-    run["sys/tags"].add("ver4.0")
+    run["sys/tags"].add("ver4.1")
     
     # 데이터 준비
     ## Input Dimension : 12 + 14 = 26 
@@ -188,7 +188,7 @@ def objective(trial):
     model_filename = f"AE4_dim{config['encoding_dim']}_batch{config['batch_size']}_lr{config['lr']:.6f}_l1{l1_lambda:.6f}.pth"
     
     # Early Stopping 추가
-    early_stopping_patience = 10
+    early_stopping_patience = 18
     no_improve_count = 0
     
     # tqdm으로 에포크 진행률 표시
