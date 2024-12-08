@@ -162,7 +162,7 @@ class DAGMM(BaseModel):
     def loss(self, x, x_hat, z, gamma, lambda_energy, lambda_cov_diag):
         # 복원 손실 계산
         recon_loss = self.mse_reconstruction_error(x, x_hat)
-
+        l1_reg = sum(torch.norm(p, 1) for p in self.parameters())
         # GMM 매개변수 계산
         phi, mu, cov = self.compute_gmm_params(z, gamma)
 
@@ -173,5 +173,5 @@ class DAGMM(BaseModel):
         cov_diag = torch.mean(torch.diagonal(cov, dim1=-2, dim2=-1))
 
         # 총 손실
-        total_loss = recon_loss + lambda_energy * energy + lambda_cov_diag * cov_diag
+        total_loss = recon_loss + lambda_energy * energy + lambda_cov_diag * cov_diag + + 1e-5 * l1_reg
         return total_loss, recon_loss, energy, cov_diag
